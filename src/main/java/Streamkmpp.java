@@ -42,7 +42,6 @@ public class Streamkmpp {
 
         learner.lengthOption = new IntOption("length", 'l', "Length of the data stream (n).", 10000, 0, Integer.MAX_VALUE);
         learner.sizeCoresetOption = new IntOption("sizeCoreset", 's', "Size of the coreset (m).", 2000);
-
         stream.prepareForUse();
 
         learner.setModelContext(stream.getHeader());
@@ -179,9 +178,30 @@ public class Streamkmpp {
                         }
                         writePointToFile(pointList, clusterIndexList, clusterDistanceList, dataOutputFile);
                         pointList = new ArrayList<List<Double>>();
-                        System.out.println("Process line " + row);
                     }
                     row++;
+                }
+                if (row % bucketSize != 1) {
+                    List<Integer> clusterIndexList = new ArrayList<Integer>();
+                    List<Double> clusterDistanceList = new ArrayList<Double>();
+                    for (int i = 0; i < row % bucketSize - 1; i++) {
+                        double minDistanceToCentroid = Double.MAX_VALUE;
+                        int minClusterIndex = 0;
+                        int clusterIndex = 0;
+
+                        while (clusterIndex < clusters.size()) {
+                            double distanceToCentroid = Measure.euclideanDistance(centroidList.get(clusterIndex), pointList.get(i));
+                            if (distanceToCentroid < minDistanceToCentroid) {
+                                minClusterIndex = clusterIndex;
+                                minDistanceToCentroid = distanceToCentroid;
+                            }
+                            clusterIndex++;
+                        }
+                        clusterIndexList.add(minClusterIndex);
+                        clusterDistanceList.add(minDistanceToCentroid);
+                    }
+                    writePointToFile(pointList, clusterIndexList, clusterDistanceList, dataOutputFile);
+                    pointList = new ArrayList<List<Double>>();
                 }
             }
             System.out.println("Finish post process.");
@@ -221,7 +241,6 @@ public class Streamkmpp {
                 index = index + 1;
             }
             myWriter.close();
-            System.out.println("Successfully wrote to the file.");
         } catch (IOException e) {
             System.out.println("An error occurred.");
             e.printStackTrace();
@@ -238,7 +257,7 @@ public class Streamkmpp {
                 for (int t = 0; t < clusterIndexDistinct.size(); t++)
                     clusterSeries.add(t, new XYSeries("Cluster " + t));
 
-                XYSeriesCollection plotData =  It takes 10 minutes for processing 20k rows (including read, calculate the nearest centroid, label and write)new XYSeriesCollection();
+                XYSeriesCollection plotData = new XYSeriesCollection();
                 int s = 0;
                 for (int index = 0; index < pointClusterIndexList.size(); index++) {
                     int currentIndex = pointClusterIndexList.get(index);
@@ -263,7 +282,7 @@ public class Streamkmpp {
         Streamkmpp exp = new Streamkmpp();
 
         String fileName = "USCensus1990.data";
-        String dataPath = "../coresetsparkstreaming/datasets/";
+        String dataPath = "../coresetsparkstreaming/datasets/streamkm/";
         String outputPath = "../coresetsparkstreaming/result/process/streamkmpp/";
         exp.run(fileName, dataPath, outputPath, ",");
     }
