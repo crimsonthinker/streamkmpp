@@ -1,5 +1,7 @@
 import moa.cluster.Cluster;
 import moa.clusterers.streamkm.StreamKM;
+import moa.clusterers.streamkm.Point;
+import moa.clusterers.streamkm.BucketManager;
 import moa.cluster.Clustering;
 import moa.cluster.Cluster;
 import moa.core.AutoExpandVector;
@@ -27,14 +29,14 @@ import org.jfree.chart.JFreeChart;
 import org.jfree.data.xy.XYSeries;
 import org.jfree.data.xy.XYSeriesCollection;
 
-public class Streamkmpp {
+public class Streamkmpp extends StreamKM {
+    Streamkmpp learner = new Streamkmpp();
+    SimpleCSVStream stream = new SimpleCSVStream();
 
     public Streamkmpp() {
     }
 
     public void run(String dataFile, String dataPath, String outputPath, String delimiter) {
-        StreamKM learner = new StreamKM();
-        SimpleCSVStream stream = new SimpleCSVStream();
         String inputFile = dataPath + dataFile + ".txt";
 
         stream.csvFileOption = new FileOption("csvFile", 'f', "CSV file to load.", inputFile, "csv", false);
@@ -82,7 +84,7 @@ public class Streamkmpp {
             centroidList.add(realCentroid);
             clusterIndex++;
         }
-        postProcessData(inputFile, delimiter.charAt(0), dataFile, outputPath, 10000, clusters, centroidList);
+        learner.postProcessData(inputFile, delimiter.charAt(0), dataFile, outputPath, 10000, clusters, centroidList);
 
         double time2 = TimingUtils.nanoTimeToSeconds(TimingUtils.getNanoCPUTimeOfCurrentThread()- evaluatePostProcessStartTime);
         System.out.println("Post Processed in " + time2 + " seconds.");
@@ -133,8 +135,12 @@ public class Streamkmpp {
 
     // Java code to illustrate reading a
     // CSV file line by line
-    protected static void postProcessData(String file, char delimiter, String dataFile, String outputPath, Integer bucketSize, AutoExpandVector<Cluster> clusters, List<List<Double>> centroidList) {
+    protected void postProcessData(String file, char delimiter, String dataFile, String outputPath, Integer bucketSize, AutoExpandVector<Cluster> clusters, List<List<Double>> centroidList) {
         try {
+            BucketManager coreset = learner.manager;
+            coreset.
+
+
             // Create an object of file reader
             // class with CSV file as a parameter.
             FileReader filereader = new FileReader(file);
